@@ -13,6 +13,7 @@ class DestinationsScreen extends StatefulWidget {
 
 class _DestinationsScreenState extends State<DestinationsScreen> {
   List<Destination> destinations = [];
+  Set<String> favoriteNames = {};
 
   @override
   void initState() {
@@ -47,11 +48,27 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
         itemCount: destinations.length,
         itemBuilder: (context, index) {
           final d = destinations[index];
+          final isFav = favoriteNames.contains(d.name);
           return Card(
             child: ListTile(
               leading: FlagImage(url: d.flagUrl),
               title: Text(d.name),
               subtitle: Text('${d.capital} · ${d.region} · ${d.population}'),
+              trailing: IconButton(
+                icon: Icon(
+                  isFav ? Icons.favorite : Icons.favorite_border,
+                  color: isFav ? Colors.deepOrange : Colors.grey,
+                ),
+                onPressed: () {
+                  setState(() {
+                    if (favoriteNames.contains(d.name)) {
+                      favoriteNames.remove(d.name);
+                    } else {
+                      favoriteNames.add(d.name);
+                    }
+                  });
+                },
+              ),
               onTap: () {
                 Navigator.push(
                   context,
