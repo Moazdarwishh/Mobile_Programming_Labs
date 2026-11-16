@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../destination.dart';
 import '../flag_image.dart';
 import 'destination_web_screen.dart';
@@ -14,11 +15,32 @@ class DestinationsScreen extends StatefulWidget {
 class _DestinationsScreenState extends State<DestinationsScreen> {
   List<Destination> destinations = [];
   Set<String> favoriteNames = {};
+  final SharedPreferencesAsync _prefs = SharedPreferencesAsync();
+  static const _favKey = 'favorite_destinations';
 
   @override
   void initState() {
     super.initState();
+    _loadFavorites();
     fetchDestinations();
+  }
+
+  Future<void> _loadFavorites() async {
+    final saved = await _prefs.getStringList(_favKey) ?? [];
+    setState(() {
+      favoriteNames = saved.toSet();
+    });
+  }
+
+  void _toggleFavorite(String name) {
+    setState(() {
+      if (favoriteNames.contains(name)) {
+        favoriteNames.remove(name);
+      } else {
+        favoriteNames.add(name);
+      }
+    });
+    _prefs.setStringList(_favKey, favoriteNames.toList());
   }
 
   Future<void> fetchDestinations() async {
@@ -59,15 +81,7 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
                   isFav ? Icons.favorite : Icons.favorite_border,
                   color: isFav ? Colors.deepOrange : Colors.grey,
                 ),
-                onPressed: () {
-                  setState(() {
-                    if (favoriteNames.contains(d.name)) {
-                      favoriteNames.remove(d.name);
-                    } else {
-                      favoriteNames.add(d.name);
-                    }
-                  });
-                },
+                onPressed: () => _toggleFavorite(d.name),
               ),
               onTap: () {
                 Navigator.push(
