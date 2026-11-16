@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../db_helper.dart';
 import '../destination.dart';
 import '../flag_image.dart';
 import 'destination_web_screen.dart';
@@ -18,11 +19,14 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
   Set<String> favoriteNames = {};
   final SharedPreferencesAsync _prefs = SharedPreferencesAsync();
   static const _favKey = 'favorite_destinations';
+  bool isLoading = true;
+  String? error;
 
   @override
   void initState() {
     super.initState();
     _loadFavorites();
+    _loadCachedDestinations();
     fetchDestinations();
   }
 
@@ -44,6 +48,15 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
     _prefs.setStringList(_favKey, favoriteNames.toList());
   }
 
+  Future<void> _loadCachedDestinations() async {
+    final cached = await DBHelper.getCachedDestinations();
+    if (destinations.isEmpty && cached.isNotEmpty) {
+      setState(() {
+        destinations = cached;
+      });
+    }
+  }
+
   Future<void> fetchDestinations() async {
     try {
       final response = await Dio().get(
@@ -51,22 +64,27 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
         '?fields=name,capital,region,population,alpha2Code',
       );
       final List data = response.data as List;
+      final fresh = data
+          .map((e) => Destination.fromJson(e as Map<String, dynamic>))
+          .toList();
       setState(() {
-        destinations = data
-            .map((e) => Destination.fromJson(e as Map<String, dynamic>))
-            .toList();
+        destinations = fresh;
+        isLoading = false;
+        error = null;
       });
+      await DBHelper.cacheDestinations(fresh);
     } catch (e) {
-      print(e);
+      setState(() {
+        isLoading = false;
+        error = 'Could not load. Check your connection.';
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     Widget body;
-    if (destinations.isEmpty) {
-      body = const Center(child: CircularProgressIndicator());
-    } else {
+    if (destinations.isNotEmpty) {
       body = ListView.builder(
         itemCount: destinations.length,
         itemBuilder: (context, index) {
@@ -96,6 +114,10 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
           );
         },
       );
+    } else if (isLoading) {
+      body = const Center(child: CircularProgressIndicator());
+    } else {
+      body = Center(child: Text(error ?? 'No destinations'));
     }
 
     return Scaffold(

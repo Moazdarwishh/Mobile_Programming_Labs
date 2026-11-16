@@ -29,4 +29,24 @@ class Destination {
       flagUrl: 'https://flagcdn.com/w80/${code.toLowerCase()}.png',
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'capital': capital,
+      'region': region,
+      'population': population,
+      'flagUrl': flagUrl,
+    };
+  }
+
+  factory Destination.fromMap(Map<String, dynamic> map) {
+    return Destination(
+      name: map['name'],
+      capital: map['capital'],
+      region: map['region'],
+      population: map['population'],
+      flagUrl: map['flagUrl'],
+    );
+  }
 }
