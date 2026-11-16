@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../destination.dart';
 import '../flag_image.dart';
 import 'destination_web_screen.dart';
+import 'bucket_list_screen.dart';
 
 class DestinationsScreen extends StatefulWidget {
   const DestinationsScreen({super.key});
@@ -98,7 +99,26 @@ class _DestinationsScreenState extends State<DestinationsScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Explore Destinations')),
+      appBar: AppBar(
+        title: const Text('Explore Destinations'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.bookmark),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BucketListScreen(
+                    savedDestinations: destinations
+                        .where((d) => favoriteNames.contains(d.name))
+                        .toList(),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       body: SafeArea(child: body),
     );
   }
